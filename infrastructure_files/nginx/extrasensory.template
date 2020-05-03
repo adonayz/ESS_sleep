@@ -2,8 +2,8 @@ server {
 	listen 80;
 #	listen 443 ssl;
 #   ssl_certificate ssh/server_certificate.crt;
-#   ssl_certificate_key ssh/lab.univ.edu.private.key;
-	server_name lab.univ.edu;
+#   ssl_certificate_key ssh/washsleep.wpi.edu.private.key;
+	server_name washsleep.wpi.edu;
 
 	location /extrasensory {
 		include uwsgi_params;
