@@ -24,7 +24,7 @@ from classifiers.es_feature_extraction import *;
 ##	The resulted CSV file should be in a similar format to the primary data files in the ExtraSensory Dataset.
 ##	Notice, that for this function you need to decide in advance what are the labels that you want in the table.
 ##	Notice, as well, that after creating the CSV, you may apply your own heuristics for when to consider some labels "missing".
-##	Notice, as well, that the labels.json files of the unpacked data may contain new fields that were not used for the original ExtraSensory Dataset collection - 
+##	Notice, as well, that the labels.json files of the unpacked data may contain new fields that were not used for the original ExtraSensory Dataset collection -
 ##		these include fields that the revised ExtraSensory App logs about the user's interaction with the app:
 ##		"timestampOfOpeningFeedbackForm"
 ##		"timestampOfPressingSendFeedbackButton"
@@ -48,14 +48,14 @@ def unpack_user_uploaded_data(uuid,upload_dir,unpack_dir):
 	src_user_dir = os.path.join(upload_dir,uuid);
 	if not os.path.exists(src_user_dir):
 		raise ValueError("!!! The upload directory %s doesn't exist." % src_user_dir);
-		
+
 	# Destination directory for the user's unpacked data:
 	dst_user_dir = os.path.join(unpack_dir,uuid);
 	if not os.path.exists(dst_user_dir):
 		os.mkdir(dst_user_dir);
 		print("++ Created directory: %s" % dst_user_dir);
 		pass;
-	
+
 	# Go over the instances uploaded for this user, and unpack each of them:
 	subdirs		= sorted(os.listdir(src_user_dir));
 	for (si,subdir) in enumerate(subdirs):
@@ -71,7 +71,7 @@ def unpack_user_uploaded_data(uuid,upload_dir,unpack_dir):
 		# The labels file:
 		convert_feedback_file_to_labels_file(src_instance_dir,dst_instance_dir);
 		pass;
-	
+
 	return;
 
 '''
@@ -96,18 +96,18 @@ def collect_user_data_and_save_csv_file(uuid,unpack_dir,uuids_csvs_dir,interest_
 	if sensors is None:
 		sensors				= get_default_list_of_sensors();
 		pass;
-		
+
 	uuid_unpack_dir			= os.path.join(unpack_dir,uuid);
-	
+
 	# Read the data from the individual per-instance directories:
 	(timestamps,X,Y,missing_label_mat,label_sources,\
 	feat_names,label_names)	= read_user_features_and_labels(uuid_unpack_dir,sensors,interest_labels,add_time_of_day_features);
-	
+
 	# Write all the data from the user to a single csv file:
 	write_user_features_and_labels_to_csv(uuids_csvs_dir,uuid,timestamps,X,Y,missing_label_mat,label_sources,feat_names,label_names);
-	
+
 	return;
-	
+
 ##############################
 ## Helper functions:
 
@@ -128,7 +128,7 @@ def get_default_list_of_sensors():
 	'discrete_measurements',\
 	'lf_measurements',\
 	];
-	
+
 	return sensors;
 
 def get_classic_main_labels():
@@ -170,9 +170,9 @@ def get_default_list_of_labels(get_main=True,get_secondary=True,get_mood=False):
 	if get_mood:
 		labels.extend(get_classic_mood_labels());
 		pass;
-	
+
 	return labels;
-	
+
 def standardize_label(label):
     label   = label.upper();
     label   = label.replace(' ','_');
@@ -192,10 +192,10 @@ def get_label_source_code(feedback):
 	label_source			= label_source.replace('ACTIVE_FEEDBACK_','ACTIVE_');
 	if label_source not in g__label_source_values:
 		raise ValueError('!!! Got unsupported label source: %s' % (label_source));
-	
+
 	lscode					= g__label_source_values.index(label_source);
 	return lscode;
-	
+
 def get_instance_labels_from_feedback_file(instance_dir):
     feedback_file           = os.path.join(instance_dir,'feedback');
     if not os.path.exists(feedback_file):
@@ -208,7 +208,7 @@ def get_instance_labels_from_feedback_file(instance_dir):
     except:
         print "!!! Problem reading feedback file: %s" % feedback_file;
         raise;
-    
+
     fid.close();
 	# The file may contain a list of updates of the user-feedback.
     # Get the most up-to-date feedback:
@@ -222,7 +222,7 @@ def get_instance_labels_from_feedback_file(instance_dir):
 
     main_activity           = feedback.pop('corrected_activity',None);
     main_activity           = standardize_label(main_activity);
-    
+
     secondary_activities    = [];
     if 'secondary_activities' in feedback:
         for act in feedback['secondary_activities']:
@@ -232,21 +232,12 @@ def get_instance_labels_from_feedback_file(instance_dir):
             pass; # end for act...
         pass; # end if secondary in feedback...
 
-    moods                   = [];
-    if 'moods' in feedback:
-        for mood in feedback['moods']:
-            if len(mood) > 0:
-                moods.append(standardize_label(mood));
-                pass; # end if len(mood)...
-            pass; # end for mood
-        pass; # end if moods in feedback...
-    
+
 	lscode					= get_label_source_code(feedback);
-	
+
 	# Put the standardized fields back in the structure:
 	feedback['main_activity'] 			= main_activity;
 	feedback['secondary_activities']	= secondary_activities;
-	feedback['moods']					= moods;
 	feedback['label_source']			= lscode;
 
 	return feedback;
@@ -260,16 +251,16 @@ def convert_feedback_file_to_labels_file(src_instance_dir,dst_instance_dir):
 		pass;
 	except Exception as ex:
 		raise ValueError("!!! Failed reading feedback file from dir %s. Got exception: %s" % (src_instance_dir,ex));
-	
+
 	if label_data is None:
 		# Then there is no feedback file.
 		return;
-	
+
 	label_file	= os.path.join(dst_instance_dir,'labels.json');
 	fid			= file(label_file,'wb');
 	json.dump(label_data,fid);
 	fid.close();
-	
+
 	print("++ Wrote labels file: %s" % label_file);
 	return;
 
@@ -277,16 +268,15 @@ def get_instance_labels(instance_dir):
 	labels_file			= os.path.join(instance_dir,'labels.json');
 	if not os.path.exists(labels_file):
 		return (None,[],[],-1); # -1 is the code for "user didn't reported labels for this instance"
-		
+
 	fid					= file(labels_file,'rb');
 	labels_data			= json.load(fid);
 	fid.close();
 
 	main_activity		= labels_data['main_activity'];
 	sec_activities		= labels_data['secondary_activities'];
-	moods				= labels_data['moods'];
 	lscode				= labels_data['label_source'];
-	return (main_activity,sec_activities,moods,lscode);
+	return (main_activity,sec_activities,lscode);
 
 def read_user_features_and_labels(uuid_unpack_dir,sensors,interest_labels,add_time_of_day_features):
 	# First, collect the features from the user's examples:
@@ -295,7 +285,7 @@ def read_user_features_and_labels(uuid_unpack_dir,sensors,interest_labels,add_ti
 	print("Sensors: [%s]" % ','.join(sensors));
 	(timestamps,X,feat_names)	= read_user_features(uuid_unpack_dir,sensors,add_time_of_day_features);
 	n_ex						= len(timestamps);
-	
+
 	# Then, for each example, collect the labels, focusing on the list of desired interest_labels:
 	print("="*40);
 	print("Collecting user-reported labels...");
@@ -307,44 +297,43 @@ def read_user_features_and_labels(uuid_unpack_dir,sensors,interest_labels,add_ti
 	for i in range(n_ex):
 		timestamp				= timestamps[i];
 		instance_dir			= os.path.join(uuid_unpack_dir,'%d' % timestamp);
-		(main_activity,sec_activities,moods,lscode)	= get_instance_labels(instance_dir);
-		
+		(main_activity,sec_activities,lscode)	= get_instance_labels(instance_dir);
+
 		# The UI method of reporting labels:
 		lscodes[i]				= lscode;
-		
-		# Collect all the labels (main, secondary, mood) that the user reported:
+
+		# Collect all the labels (main, secondary) that the user reported:
 		user_labels				= [];
 		if main_activity is not None:
 			user_labels.append(main_activity);
 			pass;
 		user_labels.extend(sec_activities);
-		user_labels.extend(moods);
 		# Standardize the reported label names:
 		user_labels				= [standardize_label(label) for label in user_labels];
 		# If user reported any labels, consider all the interest labels not-missing:
 		if len(user_labels) > 0:
 			missing_label_mat[i,:]	= 0;
 			pass;
-			
+
 		# Go over the user reported labels, and mark the ones that are part of the interest labels:
 		for label in user_labels:
 			if label in interest_labels:
 				Y[i,interest_labels.index(label)]	= 1;
 				pass;
 			pass;
-			
+
 		pass;
-	
+
 	# After going over all the user's examples, identify labels that were never reported, and consider them always missing:
 	label_counts	= numpy.sum(Y,axis=0);
 	never_reported	= (label_counts <= 0);
 	missing_label_mat[:,never_reported]	= 1;
-	
+
 	return (timestamps,X,Y,missing_label_mat,lscodes,feat_names,interest_labels);
-	
+
 def read_user_features(uuid_dir,sensors,add_time_of_day_features):
 	subdirs		= sorted(os.listdir(uuid_dir));
-	
+
 	timestamps	= [];
 	X_parts		= [];
 	feat_names	= None;
@@ -365,9 +354,9 @@ def read_user_features(uuid_dir,sensors,add_time_of_day_features):
 					if feat_names[fi] != feat_names_i[fi]:
 						raise ValueError("!!! Inconsistent feature %d: %s vs. %s" % (fi,feat_names[fi],feat_names_i[fi]));
 					pass;
-					
+
 				pass;
-			
+
 			X_parts.append(numpy.reshape(feat_vec_i,(1,len(feat_names))));
 			timestamps.append(timestamp);
 			pass;
@@ -377,10 +366,10 @@ def read_user_features(uuid_dir,sensors,add_time_of_day_features):
 			raise ex;
 			pass;
 		pass;
-	
+
 	X			= numpy.concatenate(tuple(X_parts),axis=0);
 	return (timestamps,X,feat_names);
-	
+
 def read_user_instance_features(instance_dir,timestamp,sensors,add_time_of_day_features):
 	feat_parts	= [];
 	feat_names	= [];
@@ -389,7 +378,7 @@ def read_user_instance_features(instance_dir,timestamp,sensors,add_time_of_day_f
 		feat_parts.append(feat1);
 		feat_names.extend(feat_names1);
 		pass;
-	
+
 	if add_time_of_day_features:
 		(time_feats,time_feat_names)= get_features_from_measurements(instance_dir,timestamp,'time');
 		hour						= time_feats[0];
@@ -398,28 +387,28 @@ def read_user_instance_features(instance_dir,timestamp,sensors,add_time_of_day_f
 		feat_parts.append(tod_feats);
 		feat_names.extend(tod_feat_names);
 		pass;
-	
+
 	feat_vec	= numpy.concatenate(tuple(feat_parts));
 	return (feat_vec,feat_names);
-	
+
 
 def write_user_features_and_labels_to_csv(uuids_csvs_dir,uuid,timestamps,X,Y,missing_label_mat,label_sources,feat_names,label_names):
 	print("="*40);
 	print("Summarizing user %s data in single file..." % uuid);
 	# Rearrange it all in a single matrix:
-	
+
 	# Initialize the table:
 	delimiter				= ',';
 	n_ex					= X.shape[0];
 	header					= 'timestamp';
 	val_mat					= numpy.reshape(timestamps,(n_ex,1));
 	format					= '%.0f';
-	
+
 	# Add the features:
 	header					+= delimiter + delimiter.join(feat_names);
 	val_mat					= numpy.concatenate((val_mat,X),axis=1);
 	format					+= delimiter + delimiter.join(['%f' for feat in feat_names]);
-	
+
 	# Add the labels:
 	lab_prefix				= 'label';
 	adjusted_label_names	= ['%s:%s' % (lab_prefix,lab) for lab in label_names];
@@ -427,17 +416,16 @@ def write_user_features_and_labels_to_csv(uuids_csvs_dir,uuid,timestamps,X,Y,mis
 	header					+= delimiter + delimiter.join(adjusted_label_names);
 	val_mat					= numpy.concatenate((val_mat,lab_mat),axis=1);
 	format					+= delimiter + delimiter.join(['%.0f' for lab in adjusted_label_names]);
-	
+
 	# Add label source code:
-	header					+= delimiter + 'label_source';		
+	header					+= delimiter + 'label_source';
 	sources_codes			= numpy.reshape(label_sources,(n_ex,1));
 	val_mat					= numpy.concatenate((val_mat,sources_codes),axis=1);
 	format					+= delimiter + '%.0f';
-	
+
 	out_file				= os.path.join(uuids_csvs_dir,'%s.features_labels.csv.gz' % uuid);
 	numpy.savetxt(out_file,val_mat,delimiter=delimiter,header=header,comments='',fmt=format);
 	print(">> Saved data to file %s" % out_file);
 	return;
 
 ##############################
-

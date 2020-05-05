@@ -29,23 +29,23 @@ def get_classifier_instance(classifier_type):
 #		print("Falling back on the default classifier type: %s" % g__default_classifier_type);
 #		cla				= attempt_to_get_classifier_instance(g__default_classifier_type);
 #		return (cla,g__default_classifier_type);
-		
+
 def attempt_to_get_classifier_instance(classifier_type):
 	# Assume classifier_type is the name of a module under 'classifiers'
 	# and the name of a class inside that module that inherits class 'classifiers.classifier.Classifier'
-	
+
 	# Try to import the module:
 	imp					= __import__('classifiers.%s' % classifier_type);
-	
+
 	# Try to get the module of the classifier type:
 	mod					= getattr(imp,classifier_type);
-	
+
 	# Try to get the class (assume it has same name as the module):
 	cla_cls				= getattr(mod,classifier_type);
-	
+
 	# Try to instantiate a classifier:
 	cla					= cla_cls();
-	
+
 	return cla;
 ####################
 
@@ -62,8 +62,8 @@ def hello_world():
 def testing():
 	uuid = request.args.get( 'uuid' );
 	return json.dumps( {'api_type':'feedback','success': True, 'uuid':uuid,'timestamp': int(-134) } );
-	
-	
+
+
 @app.route('/extrasensory/upload_sensor_data', methods=[ 'POST' ])
 def upload_sensor_data():
 	print("-"*20);
@@ -91,15 +91,15 @@ def upload_sensor_data():
 		print 'unpacked data into tmp directory';
 
 		print 'Requested to use classifier_type:%s and classifier_name:%s' % (classifier_type,classifier_name);
-		
+
 		(cla,classifier_type)		= get_classifier_instance(classifier_type);
 		(label_names,label_probs)	= cla.classify(tmp_dir,UTime,extra_data={'classifier_name':classifier_name});
 
 		# This is to be consistent with original setting, where there was a 'main activity' describing body state:
 		(predicted_activity,predicted_prob)	= identify_leading_main_activity_in_predictions(label_names,label_probs);
-		
+
 		print "Predicted main-activity: %s (p=%.3f) and UTime: %s from classify_zip." % (predicted_activity,predicted_prob,UTime);
-		
+
 		# Try to get a representative location point, if location was collected:
 		try:
 			loc_lat_long			= get_representative_location(tmp_dir);
@@ -110,10 +110,10 @@ def upload_sensor_data():
 			print "Failed to get representative lat long coordinates. Caught exception (%s): %s" % (type(ex).__name__,ex.message);
 			traceback.print_exc();
 			pass;
-		
+
 		shutil.rmtree(tmp_dir);
 		print "Removed temporary directory: %s" % tmp_dir;
-		
+
 		msg 						= ''
 		success						= True;
 		pass;
@@ -132,7 +132,7 @@ def upload_sensor_data():
 			UTime					= 0
 			pass;
 		pass;
-		
+
 	return_string = json.dumps( {\
 		'api_type':'upload_sensor_data',\
 		'filename':uploaded_file.filename,\
@@ -150,7 +150,7 @@ def upload_sensor_data():
 	print return_string;
 	print("-"*20);
 	return return_string;
-	
+
 
 @app.route( '/extrasensory/user_labels' )
 def handle_user_labels():
@@ -162,7 +162,7 @@ def handle_user_labels():
 		Parameters
 		----------
 		uuid                - UUID of device sending the feedback
-								
+
 	  timestamp			- Timestamp of activity in question
 
 		predicted_activity  - The activity our system predicted
@@ -170,8 +170,6 @@ def handle_user_labels():
 		corrected_activity    - The activity the user corrected
 
 		secondary_activities - The set of user secondary activities (separated with commas)
-
-		mood - The mood of the user
 
 		label_source - a string to describe in which mechanism the user supplied these labels
 
@@ -195,17 +193,14 @@ def handle_user_labels():
 			raise Exception( 'Missing corrected_activity' )
 		if 'secondary_activities' not in request.args:
 			raise Exception( 'Missing secondary_activities' )
-		if 'moods' not in request.args:
-			raise Exception( 'Missing moods' )
 		if 'label_source' not in request.args:
 			raise Exception( 'Missing label_source' )
 
 		fback[ 'uuid' ]                 	= request.args.get( 'uuid' )
-		fback[ 'timestamp' ]		    	= request.args.get( 'timestamp' ) 
+		fback[ 'timestamp' ]		    	= request.args.get( 'timestamp' )
 		fback[ 'predicted_activity' ]   	= request.args.get( 'predicted_activity' ).upper()
 		fback[ 'corrected_activity' ]     	= request.args.get( 'corrected_activity' ).upper()
 		fback[ 'secondary_activities' ]     = request.args.get( 'secondary_activities' ).upper().split( ',' )
-		fback[ 'moods' ]                    = request.args.get( 'moods' ).upper().split( ',' )
 		fback[ 'label_source' ]             = request.args.get( 'label_source' ).upper();
 
 		# Are there any other properties in the request? Add them to the feedback object:
@@ -214,8 +209,8 @@ def handle_user_labels():
 				fback[key] = request.args.get(key);
 				pass;
 			pass;
-		
-		
+
+
 		UUID 	= str(fback['uuid'])
 		UTime 	= str(fback['timestamp'])
 		instance_dir = get_and_create_upload_instance_dir(UUID,UTime);
@@ -228,7 +223,7 @@ def handle_user_labels():
 			fp_in = open(feedback_file,'r');
 			old_fback = json.load(fp_in);
 			fp_in.close();
-				
+
 			if type(old_fback) == list:
 				fbacks = old_fback;
 				pass;
